@@ -32,11 +32,11 @@
 
         //minify html
         content = minify(content, {
-            collapseWhitespace : true,
-            preserveLineBreaks : true,
-            removeEmptyElements : true,
-            removeEmptyAttributes : true,
-            removeAttributeQuotes: true
+            collapseWhitespace      : true,
+            preserveLineBreaks      : true,
+            removeEmptyElements     : true,
+            removeEmptyAttributes   : true,
+            removeAttributeQuotes   : true
         });
 
         content = content.replace(/data-src/g, 'src');

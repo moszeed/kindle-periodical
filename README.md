@@ -4,6 +4,9 @@ create a periodical format .mobi file
 ## Dependencies
 "kindlegen" must be installed and set as PATH variable ...
 
+## How to install
+    npm install kindle-periodical
+
 ####How it works
 
     var periodical = require('kindle-periodical');
