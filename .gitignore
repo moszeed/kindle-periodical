@@ -1,6 +1,8 @@
 /git
 /dist
 /node_modules
+/temp
+/exported_ebooks
 
 secrets.json
 .git

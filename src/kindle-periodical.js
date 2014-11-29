@@ -10,6 +10,9 @@
     var minify          = require('html-minifier').minify;
     var exec            = require('child_process').exec;
 
+    var tempDir         = path.resolve(__dirname, '../', 'temp');
+    var kindlegenPath   = null; // null will use $PATH
+
     function truncate(string, length) {
 
         return string.substring(0, length) + '..';
@@ -40,6 +43,8 @@
         });
 
         content = content.replace(/data-src/g, 'src');
+
+        // TODO: instead of stripping the img tags, grab the remote images and save them.
         content = content.replace(/<img>/g, '');
 
         return content;
@@ -58,7 +63,7 @@
     function _getTemplate(filename) {
 
         return when.promise(function(resolve, reject) {
-            fs.readFile( __dirname + path.sep + 'templates' + path.sep + filename + '.tpl', { encoding : 'UTF-8' }, function(err, tpl) {
+            fs.readFile( path.resolve(__dirname, 'templates', filename + '.tpl'), { encoding : 'UTF-8' }, function(err, tpl) {
                 if (err) reject(err);
                 else resolve(tpl);
             });
@@ -79,21 +84,6 @@
                                     'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'time',
                                     'title', 'tr', 'u', 'ul', 'var', 'wbr', 'nav', 'summary', 'details'
                                     ];
-
-        /**
-        Main.supportedHTMLTags = [  '!--...-->' '<!DOCTYPE>', '<?xml?>', '<a>', '<address>',
-                                    '<article>', '<aside>', '<b>', '<blockquote>', '<body>', '<br>',
-                                    '<caption>', '<center>', '<cite>', '<code>', '<col>', '<dd>',
-                                    '<del>', '<dfn>', '<div>', '<dl>', '<dt>', '<em>', '<figcaption>',
-                                    '<figure>', '<footer>', '<h1>', '<h2>', '<h3>', '<h4>', '<h5>', '<h6>',
-                                    '<head>', '<header>', '<hgroup>', '<hr>', '<html>', '<i>', '<img>', '<ins>',
-                                    '<kbd>', '<li>', '<link>', '<mark>', '<map>', '<menu>', '<ol>',
-                                    '<output>', '<p>', '<pre>', '<q>', '<rp>', '<rt>', '<samp>', '<section>',
-                                    '<small>', '<source>', '<span>', '<strong>', '<style>', '<strike>', '<sub>',
-                                    '<sup>', '<table>', '<tbody>', '<td>', '<tfoot>', '<th>', '<thead>', '<time>',
-                                    '<title>', '<tr>', '<u>', '<ul>', '<var>', '<wbr>', '<nav>', '<summary>', '<details>'
-                                    ];
-        **/
 
         Main._createNxc = function(params) {
 
@@ -151,7 +141,7 @@
                             s++;
                         });
 
-                       _writeFile(__dirname + '/book/nav-contents.ncx', $ncx({
+                       _writeFile(path.resolve(tempDir, 'nav-contents.ncx'), $ncx({
                             title       : params.title,
                             author      : params.creator,
                             sections    : sections.join('')
@@ -209,10 +199,10 @@
                             params.date = new Date();
                         }
 
-                        dateString = dateString.getFullYear() + '-' + (dateString.getMonth()+1) + '-' + dateString.getDay();
+                        var dateString = params.date.getFullYear() + '-' + (params.date.getMonth()+1) + '-' + params.date.getDay();
 
 
-                        _writeFile( __dirname + path.sep + 'book' + path.sep + 'contents.opf', $opf({
+                        _writeFile( path.resolve(tempDir, 'contents.opf'), $opf({
                             doc_uuid        : currentDate,
                             title           : params.title,
                             author          : params.creator,
@@ -246,7 +236,7 @@
                 _.each(params.sections, function(section) {
                     _.each(section.articles, function(article) {
 
-                        var fileName    = __dirname + path.sep + 'book' + path.sep + pad(i) + '.html';
+                        var fileName    = path.resolve(tempDir, (pad(i) + '.html'));
                         var fileContent = '<body>' + _checkContent(article.content) + '</body>';
 
                         promises.push(_writeFile(fileName, fileContent));
@@ -298,7 +288,7 @@
                             }));
                         });
 
-                        _writeFile( __dirname + path.sep + 'book' + path.sep + 'contents.html', $content({
+                        _writeFile( path.resolve(tempDir, 'contents.html'), $content({
                             sections : sections.join('')
                         })).done(function() {
                             resolve();
@@ -316,11 +306,22 @@
 
             return when.promise(function(resolve, reject) {
 
-                var filename = opts.filename || params.title.replace(' ', '');
+                var filename = opts.filename || params.title.replace(' ', '_');
+
+                var kindlegen = 'kindlegen'
+                if(kindlegenPath){
+                    var isWindows = /^win/.test(process.platform);
+
+                    if(isWindows){
+                        console.error("Custom path for kindlegen isn't supported on Windows. Try putting it in your path, or contribute a fix");
+                    } else {
+                        kindlegen = path.resolve(kindlegenPath) + path.sep + './kindlegen';
+                    }
+                }
 
                 var commands = [
-                    'cd ' + path.normalize( __dirname + path.sep + 'book'),
-                    'kindlegen -c2 contents.opf -o ' + filename + '.mobi'
+                    'cd ' + tempDir,
+                    kindlegen + ' -c2 contents.opf -o ' + filename + '.mobi'
                 ];
 
                 exec(commands.join(' && '), function (error, stdout, stderr) {
@@ -337,10 +338,10 @@
 
             return when.promise(function(resolve, reject) {
 
-                var filename = opts.filename || params.title.replace(' ', '');
+                var filename = opts.filename || params.title.replace(' ', '_');
 
-                var targetPath = path.resolve(opts.target) + path.sep + filename + '.mobi';
-                var sourcePath = path.normalize(__dirname + path.sep + 'book' + path.sep) + filename + '.mobi';
+                var targetPath = path.resolve(opts.target, (filename + '.mobi'));
+                var sourcePath = path.resolve(tempDir, (filename + '.mobi'));
 
                 if (fs.existsSync(sourcePath)) {
 
@@ -366,10 +367,11 @@
 
             return when.promise(function(resolve, reject) {
 
-                var sourcePath = __dirname + path.sep + 'book' + path.sep;
-                fs.readdirSync(sourcePath)
+                fs.readdirSync(tempDir)
                     .forEach(function(fileName) {
-                        fs.unlinkSync(sourcePath + fileName);
+                        if(fileName !== '.keep'){ // ignores the directory keeper
+                            fs.unlinkSync(path.resolve(tempDir, fileName));
+                        }
                     });
             });
         };
@@ -390,15 +392,30 @@
                                 Main._copyCreatedMobi(params, opts)
                                     .then(function(data) {
                                         Main._cleanup(params);
-                                        resolve(opts.filename || params.title.replace(' ', ''));
+                                        resolve(opts.filename || params.title.replace(' ', '_'));
                                     });
                             });
                     });
             });
         };
 
+        Main.setOptions = function(optionsToSet){
+            _.each(optionsToSet, function(value, index){
+                switch(index){
+                    case 'tempDir':
+                        tempDir = value;
+                        break;
+                    case 'kindlegenPath':
+                        kindlegenPath = value;
+                        break;
+                }
+
+            });
+        }
+
     module.exports = {
-        create  : Main.create
+        create  : Main.create,
+        options : Main.setOptions
     };
 
 })();
