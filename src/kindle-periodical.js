@@ -203,10 +203,14 @@
                             });
                         });
 
-                        var currentDate = Date.now(),
-                            dateString = new Date();
+                        var currentDate = Date.now();
+
+                        if(params.date === undefined){
+                            params.date = new Date();
+                        }
 
                         dateString = dateString.getFullYear() + '-' + (dateString.getMonth()+1) + '-' + dateString.getDay();
+
 
                         _writeFile( __dirname + path.sep + 'book' + path.sep + 'contents.opf', $opf({
                             doc_uuid        : currentDate,
@@ -214,7 +218,7 @@
                             author          : params.creator,
                             publisher       : params.publisher,
                             subject         : params.subject,
-                            date            : dateString,
+                            date            : params.date,
                             description     : params.description,
                             manifest_items  : manifestItems.join(''),
                             spine_items     : refItems.join('')

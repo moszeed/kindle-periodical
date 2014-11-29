@@ -18,6 +18,7 @@ create a periodical format .mobi file
         "publisher"     : '<publisher>',
         "subject"       : '<subject>',
         "description"   : '<description>',
+        "date"          : date // (optional) Javascript date object. If unset, will be new Date()
 
         "sections"      : [{
 
@@ -26,11 +27,11 @@ create a periodical format .mobi file
             "articles"  : [{
                 "title"     : '<title-of-article',
                 "author"    : '<author-of-article>',
-                "content"   : '<content-of-article>'
+                "content"   : '<content-of-article>' // HTML between the body tags
             }]
         }]
     };
 
     periodical.create(bookData, {
-        target : '.' // create folder
+        target : '.' // folder not automatically created
     })
