@@ -9,6 +9,7 @@
     var sanitizeHtml    = require('sanitize-html');
     var minify          = require('html-minifier').minify;
     var exec            = require('child_process').exec;
+    var mkdirp          = require('mkdirp');
 
     var tempDir         = path.resolve(__dirname, '../', 'temp');
     var kindlegenPath   = null; // null will use $PATH
@@ -53,9 +54,13 @@
     function _writeFile(filename, content) {
 
         return when.promise(function(resolve, reject) {
-            fs.writeFile(filename, content, { encoding : 'utf8' }, function(err) {
+            mkdirp(path.dirname(filename), function (err) {
                 if (err) reject(err);
-                else resolve();
+
+                fs.writeFile(filename, content, { encoding : 'utf8' }, function(err) {
+                    if (err) reject(err);
+                    else resolve();
+                });
             });
         });
     }
