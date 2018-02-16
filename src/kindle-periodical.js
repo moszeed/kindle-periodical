@@ -10,14 +10,17 @@
     const fileStat = promisify(fs.stat);
     const mkdir = promisify(fs.mkdir);
     const _ = require('underscore');
+    const jsdom = require('jsdom');
+    const { JSDOM } = jsdom;
+    const read = require('node-readability');
     const sanitizeHtml = require('sanitize-html');
+    const download = require('download');
     const minify = require('html-minifier').minify;
     const exec = require('child_process').exec;
     const rimraf = require('rimraf');
 
     const mobiSupportedTags = [
-        'a', 'address',
-        'article', 'aside', 'b', 'blockquote', 'body', 'br',
+        'a', 'address', 'article', 'aside', 'b', 'blockquote', 'body', 'br',
         'caption', 'center', 'cite', 'code', 'col', 'dd',
         'del', 'dfn', 'div', 'dl', 'dt', 'em', 'figcaption',
         'figure', 'footer', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -29,7 +32,9 @@
         'title', 'tr', 'u', 'ul', 'var', 'wbr', 'nav', 'summary', 'details'
     ];
 
+
     function pad (value) {
+
         return (`00000${value}`).slice(-5);
     }
 
@@ -63,15 +68,28 @@
         return content;
     }
 
-    async function checkIfFileExists (filePath, notExistCallback) {
-        try {
-            await fileStat(filePath);
-        } catch (err) {
-            if (err.code !== 'ENOENT') {
-                throw Error(err);
-            }
-            await notExistCallback();
-        }
+    function readRemoteContent (url) {
+        return new Promise((resolve, reject) => {
+            read(url, async (err, article, meta) => {
+                if (err) reject(err);
+                else {
+
+                    const content = article.content;
+                    const dom = new JSDOM(content);
+
+                    // download images
+                    let imgs = dom.window.document.querySelectorAll('img');
+                    for (let img of imgs) {
+                        console.log(`--> download image from: ${img.src}`);
+                        await download(img.src, path.join(process.cwd(), 'book'));
+                        img.src = path.basename(img.src);
+                    }
+
+                    resolve(dom.serialize());
+                    article.close();
+                }
+            });
+        });
     }
 
     function createFolder (fileFolder) {
@@ -83,6 +101,44 @@
                     }
                 });
         });
+    }
+
+    function cleanupBookFolder () {
+        return new Promise((resolve, reject) => {
+            rimraf(path.join(process.cwd(), 'book'), (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+    }
+
+    function createMobiFile (filename) {
+        return new Promise((resolve, reject) => {
+            let bookFolder = path.join(process.cwd(), 'book');
+            let commands = [
+                'cd ' + path.normalize(bookFolder),
+                `${path.resolve(__dirname, '..', 'bin/kindlegen')} -c2 contents.opf -o ${filename}.mobi`
+            ];
+
+            let kindlegenExec = exec(commands.join(' && '), () => {
+                resolve();
+            });
+
+            kindlegenExec.stdout.pipe(process.stdout);
+            kindlegenExec.stderr.pipe(process.stderr);
+        });
+    }
+
+
+    async function checkIfFileExists (filePath, notExistCallback) {
+        try {
+            await fileStat(filePath);
+        } catch (err) {
+            if (err.code !== 'ENOENT') {
+                throw Error(err);
+            }
+            await notExistCallback();
+        }
     }
 
     async function writeToBookFolder (fileName, fileContent) {
@@ -108,25 +164,20 @@
             .pipe(fs.createWriteStream(`${path.join(targetFolder, fileName)}.mobi`));
     }
 
-    function cleanupBookFolder () {
-        return new Promise((resolve, reject) => {
-            rimraf(path.join(process.cwd(), 'book'), (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
-    }
-
     async function createArticleHTMLFiles (article, articleNumber, sectionNumber) {
         try {
             assert.ok(typeof sectionNumber === 'number', 'sectionNumber is no number');
             assert.ok(typeof articleNumber === 'number', 'articleNumber is no number');
 
             let fileName = `${sectionNumber}-${pad(articleNumber)}.html`;
-            let fileContent = '<body>' + checkContent(article.content) + '</body>';
+
+            let content = article.content || '';
+            if (article.url) {
+                content = await readRemoteContent(article.url);
+            }
 
             console.log(`-> create article (HTML) with Name ${fileName}`);
-            await writeToBookFolder(fileName, fileContent);
+            await writeToBookFolder(fileName, `<body>${checkContent(content)}</body>`);
 
             return fileName;
         } catch (err) {
@@ -278,22 +329,6 @@
         return fileName;
     }
 
-    function createMobiFile (filename) {
-        return new Promise((resolve, reject) => {
-            let bookFolder = path.join(process.cwd(), 'book');
-            let commands = [
-                'cd ' + path.normalize(bookFolder),
-                `${path.resolve(__dirname, '..', 'bin/kindlegen')} -c2 contents.opf -o ${filename}.mobi`
-            ];
-
-            let kindlegenExec = exec(commands.join(' && '), () => {
-                resolve();
-            });
-
-            kindlegenExec.stdout.pipe(process.stdout);
-            kindlegenExec.stderr.pipe(process.stderr);
-        });
-    }
 
     exports.create = async function (params = {}, opts = {}) {
         try {

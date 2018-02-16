@@ -111,4 +111,26 @@
         t.ok(true, 'run to the end');
         t.end();
     });
+
+    test('create.withurl', async (t) => {
+        var bookData = {
+            title      : 'ebook-title-simple-withurl',
+            creator    : 'creator',
+            publisher  : 'publisher',
+            subject    : 'subject',
+            description: 'description',
+            sections   : [{
+                title   : 'title-of-section',
+                articles: [{
+                    title : 'title-of-article',
+                    author: 'author-of-article',
+                    url   : 'https://de.wikipedia.org/wiki/Linux'
+                }]
+            }]
+        };
+
+        await kindlePeriodical.create(bookData);
+        t.ok(true, 'run to the end');
+        t.end();
+    });
 })();
