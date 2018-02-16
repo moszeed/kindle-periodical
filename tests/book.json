@@ -1,0 +1,30 @@
+{
+    "title"      : "ebook-title-simple-from-json",
+    "creator"    : "creator",
+    "publisher"  : "publisher",
+    "subject"    : "subject",
+    "description": "description",
+    "sections"   : [{
+        "title"   : "title-of-section",
+        "articles": [{
+            "title"  : "title-of-article",
+            "author" : "author-of-article",
+            "content": "simple content"
+        }, {
+            "title"  : "title-of-article",
+            "author" : "author-of-article",
+            "content": "simple content"
+        }]
+    }, {
+        "title"   : "title-of-section-2",
+        "articles": [{
+            "title"  : "title-of-article-2-1",
+            "author" : "author-of-article",
+            "content": "simple content"
+        }, {
+            "title"  : "title-of-article-2-2",
+            "author" : "author-of-article",
+            "content": "simple content"
+        }]
+    }]
+}
