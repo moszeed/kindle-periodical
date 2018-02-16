@@ -1,6 +1,6 @@
 {
   "name": "kindle-periodical",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "create a periodical .mobi, with kindlegen",
   "main": "./src/kindle-periodical.js",
   "bin": {
@@ -20,7 +20,9 @@
   "dependencies": {
     "download": "^6.2.5",
     "html-minifier": "^3.5.9",
+    "jsdom": "^11.6.2",
     "minimist": "^1.2.0",
+    "node-readability": "^3.0.0",
     "rimraf": "^2.6.2",
     "sanitize-html": "^1.17.0",
     "underscore": "^1.8.3"
