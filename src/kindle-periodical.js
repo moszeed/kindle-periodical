@@ -209,6 +209,9 @@
         }
 
         let currentDate = Date.now();
+        let dateString = new Date();
+        dateString = dateString.getFullYear() + '-' + (dateString.getMonth() + 1) + '-' + dateString.getDay();
+
         let fileName = 'contents.opf';
 
         console.log(`-> create opf (HTML) with Name ${fileName}`);
@@ -218,7 +221,7 @@
             author        : params.creator,
             publisher     : params.publisher,
             subject       : params.subject,
-            date          : currentDate,
+            date          : dateString,
             description   : params.description,
             manifest_items: manifestItems.join(''),
             spine_items   : refItems.join('')
