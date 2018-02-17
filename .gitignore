@@ -1,6 +1,6 @@
 /git
 /dist
 /node_modules
-
+/bin
 secrets.json
 .git

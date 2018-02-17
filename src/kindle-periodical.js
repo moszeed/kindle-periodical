@@ -18,7 +18,10 @@
     const minify = require('html-minifier').minify;
     const exec = require('child_process').exec;
     const rimraf = require('rimraf');
+    const showdown = require('showdown');
+    const converter = new showdown.Converter();
 
+    const bookFolderPath = path.join(process.cwd(), 'book');
     const mobiSupportedTags = [
         'a', 'address', 'article', 'aside', 'b', 'blockquote', 'body', 'br',
         'caption', 'center', 'cite', 'code', 'col', 'dd',
@@ -49,6 +52,11 @@
 
     function checkContent (content) {
         content = content.toString();
+
+        // convert markdown
+        content = converter.makeHtml(content);
+
+        // remove not supported tags
         content = sanitizeHtml(content, {
             allowedTags: mobiSupportedTags
         });
@@ -59,7 +67,9 @@
             preserveLineBreaks   : true,
             removeEmptyElements  : true,
             removeEmptyAttributes: true,
-            removeAttributeQuotes: true
+            removeAttributeQuotes: true,
+            removeComments       : true,
+            decodeEntities       : true
         });
 
         content = content.replace(/data-src/g, 'src');
@@ -74,14 +84,18 @@
                 if (err) reject(err);
                 else {
 
+                    await createFolder(bookFolderPath);
+
                     const content = article.content;
                     const dom = new JSDOM(content);
 
                     // download images
                     let imgs = dom.window.document.querySelectorAll('img');
                     for (let img of imgs) {
+                        let baseName = path.basename(img.src);
                         console.log(`--> download image from: ${img.src}`);
-                        await download(img.src, path.join(process.cwd(), 'book'));
+                        await download(img.src).pipe(fs.createWriteStream(path.join(process.cwd(), 'book', baseName)));
+
                         img.src = path.basename(img.src);
                     }
 
@@ -105,7 +119,7 @@
 
     function cleanupBookFolder () {
         return new Promise((resolve, reject) => {
-            rimraf(path.join(process.cwd(), 'book'), (err) => {
+            rimraf(bookFolderPath, (err) => {
                 if (err) reject(err);
                 else resolve();
             });
@@ -114,18 +128,19 @@
 
     function createMobiFile (filename) {
         return new Promise((resolve, reject) => {
-            let bookFolder = path.join(process.cwd(), 'book');
             let commands = [
-                'cd ' + path.normalize(bookFolder),
+                'cd ' + path.normalize(bookFolderPath),
                 `${path.resolve(__dirname, '..', 'bin/kindlegen')} -c2 contents.opf -o ${filename}.mobi`
             ];
 
-            let kindlegenExec = exec(commands.join(' && '), () => {
-                resolve();
-            });
+            let kindlegenExec = exec(commands.join(' && '));
 
             kindlegenExec.stdout.pipe(process.stdout);
             kindlegenExec.stderr.pipe(process.stderr);
+            kindlegenExec.on('close', (code) => {
+                console.log(`--> .mobi file created`);
+                resolve();
+            });
         });
     }
 
@@ -145,23 +160,25 @@
         assert.ok(fileName, 'no filename given');
         assert.ok(fileContent, 'no content given');
 
-        let fileFolder = path.join(process.cwd(), 'book');
-
         // create folder if not exists
-        await createFolder(fileFolder);
+        await createFolder(bookFolderPath);
 
-        return writeFile(path.join(fileFolder, fileName), fileContent);
+        return writeFile(path.join(bookFolderPath, fileName), fileContent);
     }
 
     async function copyCreatedMobi (fileName) {
         assert.ok(fileName, 'no fileName given');
-        let bookFolder = path.join(process.cwd(), 'book');
+
         let targetFolder = path.join(process.cwd(), 'compiled');
+        let createdMobiPath = `${path.join(bookFolderPath, fileName)}.mobi`;
+        let compiledMobiPath = `${path.join(targetFolder, fileName)}.mobi`;
+        await copyFile(createdMobiPath, compiledMobiPath);
+    }
 
-        await createFolder(targetFolder);
-
-        fs.createReadStream(`${path.join(bookFolder, fileName)}.mobi`)
-            .pipe(fs.createWriteStream(`${path.join(targetFolder, fileName)}.mobi`));
+    async function copyFile(sourceFilePath, targetFolder) {
+        await createFolder(path.dirname(targetFolder));
+        fs.createReadStream(sourceFilePath)
+            .pipe(fs.createWriteStream(targetFolder));
     }
 
     async function createArticleHTMLFiles (article, articleNumber, sectionNumber) {
@@ -217,68 +234,85 @@
     }
 
     async function createContentHTMLFile (createdSections = []) {
-        assert.ok(createdSections, 'no sections given');
+        try {
+            assert.ok(createdSections, 'no sections given');
 
-        const $content = _.template(await getTemplate('content'));
+            const $content = _.template(await getTemplate('content'));
 
-        let fileName = `contents.html`;
-        let fileContent = $content({
-            sections: createdSections.join('')
-        });
+            let fileName = `contents.html`;
+            let fileContent = $content({
+                sections: createdSections.join('')
+            });
 
-        console.log(`-> create contents (HTML) with Name ${fileName}`);
-        await writeToBookFolder(fileName, fileContent);
+            console.log(`-> create contents (HTML) with Name ${fileName}`);
+            await writeToBookFolder(fileName, fileContent);
 
-        return fileName;
+            return fileName;
+        } catch (err) {
+            console.log('fail to create content html');
+            throw Error(err);
+        }
     }
 
     async function createOpfHTMLFile (params = {}) {
-        assert.ok(params, 'no params given');
+        try {
+            assert.ok(params, 'no params given');
 
-        const $opf = _.template(await getTemplate('opf'));
-        const $opfManifest = _.template(await getTemplate('opf-manifest'));
-        const $opfSpineItem = _.template(await getTemplate('opf-spine-item'));
+            const $opf = _.template(await getTemplate('opf'));
+            const $opfManifest = _.template(await getTemplate('opf-manifest'));
+            const $opfSpineItem = _.template(await getTemplate('opf-spine-item'));
 
-        const manifestItems = [];
-        const refItems = [];
+            const manifestItems = [];
+            const refItems = [];
 
-        for (let sectionIndex in params.sections) {
-            let currentSection = params.sections[sectionIndex];
-            for (let articleIndex in currentSection.articles) {
-                let fileName = `${sectionIndex}-${pad(articleIndex)}`;
-                let idrefName = `item-${fileName}`;
-                manifestItems.push($opfManifest({
-                    href : `${fileName}.html`,
-                    media: 'application/xhtml+xml',
-                    idref: idrefName
-                }));
+            for (let sectionIndex in params.sections) {
+                let currentSection = params.sections[sectionIndex];
+                for (let articleIndex in currentSection.articles) {
+                    let fileName = `${sectionIndex}-${pad(articleIndex)}`;
+                    let idrefName = `item-${fileName}`;
+                    manifestItems.push($opfManifest({
+                        href : `${fileName}.html`,
+                        media: 'application/xhtml+xml',
+                        idref: idrefName
+                    }));
 
-                refItems.push($opfSpineItem({
-                    idref: idrefName
-                }));
+                    refItems.push($opfSpineItem({
+                        idref: idrefName
+                    }));
+                }
             }
+
+            let currentDate = Date.now();
+            let dateString = new Date();
+            dateString = dateString.getFullYear() + '-' + (dateString.getMonth() + 1) + '-' + dateString.getDay();
+
+            let cover = '';
+            if (params.cover) {
+                cover = path.basename(params.cover);
+            }
+
+
+            let fileName = 'contents.opf';
+            console.log(`-> create opf (HTML) with Name ${fileName}`);
+            await writeToBookFolder(fileName, $opf({
+                doc_uuid      : currentDate,
+                title         : params.title,
+                author        : params.creator,
+                cover         : cover,
+                publisher     : params.publisher,
+                subject       : params.subject,
+                language      : params.language || 'en-gb',
+                date          : dateString,
+                description   : params.description,
+                manifest_items: manifestItems.join(''),
+                spine_items   : refItems.join('')
+            }));
+
+            return fileName;
+        } catch (err) {
+            console.log('fail to create opf html file');
+            throw Error(err);
         }
-
-        let currentDate = Date.now();
-        let dateString = new Date();
-        dateString = dateString.getFullYear() + '-' + (dateString.getMonth() + 1) + '-' + dateString.getDay();
-
-        let fileName = 'contents.opf';
-
-        console.log(`-> create opf (HTML) with Name ${fileName}`);
-        await writeToBookFolder(fileName, $opf({
-            doc_uuid      : currentDate,
-            title         : params.title,
-            author        : params.creator,
-            publisher     : params.publisher,
-            subject       : params.subject,
-            date          : dateString,
-            description   : params.description,
-            manifest_items: manifestItems.join(''),
-            spine_items   : refItems.join('')
-        }));
-
-        return fileName;
     }
 
     async function createNsxHTMLFile (params = {}) {
@@ -336,6 +370,11 @@
             assert.ok(params.sections, 'no sections given');
 
             await cleanupBookFolder();
+            
+            if (params.cover) {
+                await copyFile(params.cover, path.join(bookFolderPath, path.basename(params.cover)));
+            }
+
             let createdSections = await createSections(params.sections);
             await createContentHTMLFile(createdSections);
             await createOpfHTMLFile(params);

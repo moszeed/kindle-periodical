@@ -19,6 +19,8 @@ will reate a ```compiled``` folder with the generated book
         "creator"       : 'creator',
         "publisher"     : 'publisher',
         "subject"       : 'subject',
+        "language"      : 'language (en-Gb, de-De)',
+        "cover"         : "path-to-cover",
         "description"   : 'description',
         "sections"      : [{
             "title" : 'title-of-section',
@@ -26,7 +28,7 @@ will reate a ```compiled``` folder with the generated book
                 "title"  : 'title-of-article',
                 "author" : 'author-of-article',
                 "content": 'content-of-article'
-                "url"    : 'url-to-a-website'   // "content" gets ignored
+                "url"    : 'url-to-a-website'
             }]
         }]
     };
@@ -34,3 +36,8 @@ will reate a ```compiled``` folder with the generated book
     periodical.create(bookData, {
         target : '.' // create folder
     })
+
+
+- ```content``` supports HTML and Markdown
+- ```url``` accepts a website url
+- if ```"url"``` is set, the ```content``` field will be ignored.
