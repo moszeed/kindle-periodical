@@ -28,6 +28,7 @@ will reate a ```compiled``` folder with the generated book
                 "title"  : 'title-of-article',
                 "author" : 'author-of-article',
                 "content": 'content-of-article'
+                "file"   : "path-to-local-file",
                 "url"    : 'url-to-a-website'
             }]
         }]
@@ -39,5 +40,6 @@ will reate a ```compiled``` folder with the generated book
 
 
 - ```content``` supports HTML and Markdown
+- ```file``` full path to a local folder
 - ```url``` accepts a website url
-- if ```"url"``` is set, the ```content``` field will be ignored.
+- if ```url``` or ```file``` is set, the ```content``` field will be ignored.

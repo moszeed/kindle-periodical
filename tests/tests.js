@@ -114,6 +114,28 @@
         t.end();
     });
 
+    test('create.simple.withfile', async (t) => {
+        var bookData = {
+            title      : 'ebook-title-simple-withfile',
+            creator    : 'creator',
+            publisher  : 'publisher',
+            subject    : 'subject',
+            description: 'description',
+            sections   : [{
+                title   : 'title-of-section',
+                articles: [{
+                    title  : 'title-of-article',
+                    author : 'author-of-article',
+                    file   : './tests/article.html'
+                }]
+            }]
+        };
+
+        await kindlePeriodical.create(bookData);
+        t.ok(true, 'run to the end');
+        t.end();
+    });
+
     test('create.simple.withurl', async (t) => {
         var bookData = {
             title      : 'ebook-title-simple-withurl',

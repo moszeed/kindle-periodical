@@ -83,7 +83,6 @@
             read(url, async (err, article, meta) => {
                 if (err) reject(err);
                 else {
-
                     await createFolder(bookFolderPath);
 
                     const content = article.content;
@@ -191,6 +190,9 @@
             let content = article.content || '';
             if (article.url) {
                 content = await readRemoteContent(article.url);
+            }
+            if (article.file) {
+                content = await readFile(article.file);
             }
 
             console.log(`-> create article (HTML) with Name ${fileName}`);
