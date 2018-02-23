@@ -152,7 +152,7 @@
                 }]
             }]
         };
-        
+
         await kindlePeriodical.create(bookData);
         t.ok(true, 'run to the end');
         t.end();
@@ -264,6 +264,31 @@
         };
 
         await kindlePeriodical.create(bookData);
+        t.ok(true, 'run to the end');
+        t.end();
+    });
+
+    test('create.one.section.targetFolder', async (t) => {
+        var bookData = {
+            title      : 'ebook-title-simple-other-folder',
+            creator    : 'creator',
+            publisher  : 'publisher',
+            subject    : 'subject',
+            description: 'description',
+            cover      : path.join(__dirname, 'test.jpg'),
+            sections   : [{
+                title   : 'title-of-section',
+                articles: [{
+                    title  : 'title-of-article',
+                    author : 'author-of-article',
+                    content: 'simple content'
+                }]
+            }]
+        };
+
+        await kindlePeriodical.create(bookData, {
+            targetFolder: path.join(process.cwd(), 'otherCompiled')
+        });
         t.ok(true, 'run to the end');
         t.end();
     });

@@ -9,6 +9,9 @@ Kindlegen must *NOT* be in PATH, will be Downloaded on install
 #### CLI usage
     kindle-periodical -f nameOfBook /path/to/.json
 
+    -f --filename   name of created .mobi
+    -o --output     folder of created .mobi
+
 will reate a ```compiled``` folder with the generated book
 
 #### API usage
@@ -35,7 +38,7 @@ will reate a ```compiled``` folder with the generated book
     };
 
     periodical.create(bookData, {
-        target : '.' // create folder
+        targetFolder: '.' // where should the mobi file go
     })
 
 

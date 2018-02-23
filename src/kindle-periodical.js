@@ -35,9 +35,7 @@
         'title', 'tr', 'u', 'ul', 'var', 'wbr', 'nav', 'summary', 'details'
     ];
 
-
     function pad (value) {
-
         return (`00000${value}`).slice(-5);
     }
 
@@ -143,7 +141,6 @@
         });
     }
 
-
     async function checkIfFileExists (filePath, notExistCallback) {
         try {
             await fileStat(filePath);
@@ -165,16 +162,16 @@
         return writeFile(path.join(bookFolderPath, fileName), fileContent);
     }
 
-    async function copyCreatedMobi (fileName) {
+    async function copyCreatedMobi (fileName, targetFolder) {
         assert.ok(fileName, 'no fileName given');
 
-        let targetFolder = path.join(process.cwd(), 'compiled');
+        targetFolder = targetFolder || path.join(process.cwd(), 'compiled');
         let createdMobiPath = `${path.join(bookFolderPath, fileName)}.mobi`;
         let compiledMobiPath = `${path.join(targetFolder, fileName)}.mobi`;
         await copyFile(createdMobiPath, compiledMobiPath);
     }
 
-    async function copyFile(sourceFilePath, targetFolder) {
+    async function copyFile (sourceFilePath, targetFolder) {
         await createFolder(path.dirname(targetFolder));
         fs.createReadStream(sourceFilePath)
             .pipe(fs.createWriteStream(targetFolder));
@@ -365,14 +362,13 @@
         return fileName;
     }
 
-
     exports.create = async function (params = {}, opts = {}) {
         try {
             assert.ok(params.title, 'no title given');
             assert.ok(params.sections, 'no sections given');
 
             await cleanupBookFolder();
-            
+
             if (params.cover) {
                 await copyFile(params.cover, path.join(bookFolderPath, path.basename(params.cover)));
             }
@@ -384,7 +380,7 @@
 
             let filename = opts.filename || params.title.replace(' ', '');
             await createMobiFile(filename);
-            await copyCreatedMobi(filename);
+            await copyCreatedMobi(filename, opts.targetFolder);
 
             return true;
         } catch (err) {
