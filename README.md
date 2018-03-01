@@ -1,4 +1,4 @@
-#kindle-periodical
+# kindle-periodical
 create a periodical format .mobi file
 
 Kindlegen must *NOT* be in PATH, will be Downloaded on install
