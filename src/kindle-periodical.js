@@ -90,10 +90,11 @@
                     let imgs = dom.window.document.querySelectorAll('img');
                     for (let img of imgs) {
                         let baseName = path.basename(img.src);
-                        console.log(`--> download image from: ${img.src}`);
-                        await download(img.src).pipe(fs.createWriteStream(path.join(process.cwd(), 'book', baseName)));
+                        let cleanedBaseName = baseName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                        console.log(`--> download image from: ${img.src}, rename to ${cleanedBaseName}`);
+                        await download(img.src).pipe(fs.createWriteStream(path.join(process.cwd(), 'book', cleanedBaseName)));
 
-                        img.src = path.basename(img.src);
+                        img.src = cleanedBaseName;
                     }
 
                     resolve(dom.serialize());
