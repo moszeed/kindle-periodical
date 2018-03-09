@@ -32,7 +32,8 @@
         'output', 'p', 'pre', 'q', 'rp', 'rt', 'samp', 'section',
         'small', 'source', 'span', 'strong', 'style', 'strike', 'sub',
         'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'time',
-        'title', 'tr', 'u', 'ul', 'var', 'wbr', 'nav', 'summary', 'details'
+        'title', 'tr', 'u', 'ul', 'var', 'wbr', 'nav', 'summary', 'details',
+        'meta'
     ];
 
     function pad (value) {
@@ -56,7 +57,12 @@
 
         // remove not supported tags
         content = sanitizeHtml(content, {
-            allowedTags: mobiSupportedTags
+            allowedTags      : mobiSupportedTags,
+            allowedAttributes: {
+                meta: [ 'charset' ],
+                a   : [ 'href', 'name', 'target' ],
+                img : [ 'src' ]
+            }
         });
 
         // minify html
@@ -78,7 +84,7 @@
 
     function readRemoteContent (url) {
         return new Promise((resolve, reject) => {
-            read(url, async (err, article, meta) => {
+            read(url, { encoding: 'utf8' }, async (err, article, meta) => {
                 if (err) reject(err);
                 else {
                     await createFolder(bookFolderPath);
@@ -86,15 +92,21 @@
                     const content = article.content;
                     const dom = new JSDOM(content);
 
+                    // add a utf8 header
+                    dom.window.document.head.insertAdjacentHTML('beforeend', '<meta charset="utf-8">');
+
                     // download images
                     let imgs = dom.window.document.querySelectorAll('img');
                     for (let img of imgs) {
-                        let baseName = path.basename(img.src);
+                        let extension = path.extname(img.src);
+                        let baseName = path.basename(img.src, extension);
                         let cleanedBaseName = baseName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                        console.log(`--> download image from: ${img.src}, rename to ${cleanedBaseName}`);
-                        await download(img.src).pipe(fs.createWriteStream(path.join(process.cwd(), 'book', cleanedBaseName)));
+                        let cleanedFileName = cleanedBaseName + extension;
 
-                        img.src = cleanedBaseName;
+                        console.log(`--> download image from: ${img.src}, rename to ${cleanedFileName}`);
+                        await download(img.src).pipe(fs.createWriteStream(path.join(process.cwd(), 'book', cleanedFileName)));
+
+                        img.src = cleanedFileName;
                     }
 
                     resolve(dom.serialize());
@@ -160,7 +172,7 @@
         // create folder if not exists
         await createFolder(bookFolderPath);
 
-        return writeFile(path.join(bookFolderPath, fileName), fileContent);
+        return writeFile(path.join(bookFolderPath, fileName), fileContent, 'utf8');
     }
 
     async function copyCreatedMobi (fileName, targetFolder) {
