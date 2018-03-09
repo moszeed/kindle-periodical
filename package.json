@@ -1,6 +1,6 @@
 {
   "name": "kindle-periodical",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "create a periodical .mobi, with kindlegen",
   "main": "./src/kindle-periodical.js",
   "bin": {
@@ -38,6 +38,7 @@
   "devDependencies": {
     "tape": "latest",
     "eslint": "latest",
+    "eslint-config-standard": "latest",
     "eslint-plugin-import": "latest",
     "eslint-plugin-node": "latest",
     "eslint-plugin-promise": "latest",
