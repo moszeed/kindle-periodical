@@ -10,18 +10,20 @@
                 <dc:subject><%= subject %></dc:subject>
                 <dc:date><%= date %></dc:date>
                 <dc:description><%= description %></dc:description>
-                <meta content="book-cover-image" name="cover"/>
             </dc-metadata>
 
             <x-metadata>
                 <output content-type="application/x-mobipocket-subscription-magazine" encoding="utf-8"/>
+                <EmbeddedCover><%= cover %></EmbeddedCover>
             </x-metadata>
+
+            <meta content="book-cover-image" name="cover"/>
         </metadata>
 
         <manifest>
             <item href="contents.html" media-type="application/xhtml+xml" id="contents"/>
             <item href="nav-contents.ncx" media-type="application/x-dtbncx+xml" id="nav-contents"/>
-            <item href="<%= cover %>" media-type="image/jpeg" id="book-cover-image" />
+            <item href="<%= cover %>" media-type="image/jpg" id="book-cover-image" />
             <%= manifest_items %>
         </manifest>
 
