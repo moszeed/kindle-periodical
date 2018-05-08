@@ -1,6 +1,6 @@
 {
   "name": "kindle-periodical",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "create a periodical .mobi, with kindlegen",
   "main": "./src/kindle-periodical.js",
   "bin": {
