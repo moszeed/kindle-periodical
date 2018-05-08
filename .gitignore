@@ -2,5 +2,9 @@
 /dist
 /node_modules
 /bin
+/book
+/compiled
+/otherCompiled
 secrets.json
 .git
+package-lock.json

@@ -194,6 +194,7 @@
             publisher  : 'publisher',
             subject    : 'subject',
             description: 'description',
+            cover      : path.join(__dirname, 'test.jpg'),
             sections   : [{
                 title   : 'title-of-section-01',
                 articles: [
