@@ -49,7 +49,7 @@
         });
     }
 
-    function checkContent (content) {
+    async function checkContent (content, article) {
         content = content.toString();
 
         // convert markdown
@@ -61,7 +61,7 @@
             allowedAttributes: {
                 meta: [ 'charset' ],
                 a   : [ 'href', 'name', 'target' ],
-                img : [ 'src' ]
+                img : [ 'src', 'srcset' ]
             }
         });
 
@@ -77,9 +77,45 @@
         });
 
         content = content.replace(/data-src/g, 'src');
+        content = content.replace(/<source>/g, '<source/>');
         content = content.replace(/<img>/g, '');
 
+        content = await readRemoteImagesFromContent(content, article);
+
         return content;
+    }
+
+    async function readRemoteImagesFromContent (content, article) {
+        const dom = new JSDOM(content);
+
+        // download images
+        let imgs = dom.window.document.querySelectorAll('img');
+        for (let img of imgs) {
+            let extension = path.extname(img.src);
+            let baseName = path.basename(img.src, extension);
+            let cleanedBaseName = baseName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            let cleanedFileName = cleanedBaseName + extension;
+
+            try {
+                new URL(img.src);
+            } catch (err) {
+                console.log(`-> no valid url: ${err}, maybe local`);
+
+                // maybe it is a realtive url, try to fix this
+                if (article.url) {
+                    let url = article.url.split('/');
+                    url.pop();
+                    img.src = path.join(url.join('/'), img.src);
+                }
+            }
+
+            console.log(`--> download image from: ${img.src}, rename to ${cleanedFileName}`);
+            await download(img.src).pipe(fs.createWriteStream(path.join(process.cwd(), 'book', cleanedFileName)));
+
+            img.src = cleanedFileName;
+        }
+
+        return dom.serialize();
     }
 
     function readRemoteContent (url) {
@@ -94,20 +130,6 @@
 
                     // add a utf8 header
                     dom.window.document.head.insertAdjacentHTML('beforeend', '<meta charset="utf-8">');
-
-                    // download images
-                    let imgs = dom.window.document.querySelectorAll('img');
-                    for (let img of imgs) {
-                        let extension = path.extname(img.src);
-                        let baseName = path.basename(img.src, extension);
-                        let cleanedBaseName = baseName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                        let cleanedFileName = cleanedBaseName + extension;
-
-                        console.log(`--> download image from: ${img.src}, rename to ${cleanedFileName}`);
-                        await download(img.src).pipe(fs.createWriteStream(path.join(process.cwd(), 'book', cleanedFileName)));
-
-                        img.src = cleanedFileName;
-                    }
 
                     resolve(dom.serialize());
                     article.close();
@@ -206,7 +228,8 @@
             }
 
             console.log(`-> create article (HTML) with Name ${fileName}`);
-            await writeToBookFolder(fileName, `<body>${checkContent(content)}</body>`);
+            const checkedContent = await checkContent(content, article);
+            await writeToBookFolder(fileName, `<body>${checkedContent}</body>`);
 
             return fileName;
         } catch (err) {
@@ -302,7 +325,6 @@
             if (params.cover) {
                 cover = path.basename(params.cover);
             }
-
 
             let fileName = 'contents.opf';
             console.log(`-> create opf (HTML) with Name ${fileName}`);
