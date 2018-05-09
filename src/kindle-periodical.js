@@ -3,7 +3,6 @@
 
     const fs = require('fs');
     const path = require('path');
-    const http = require('http');
     const assert = require('assert');
     const promisify = require('util').promisify;
     const writeFile = promisify(fs.writeFile);
@@ -17,7 +16,7 @@
     const sanitizeHtml = require('sanitize-html');
     const download = require('download');
     const minify = require('html-minifier').minify;
-    const exec = require('child_process').execFile;
+    const exec = require('child_process').exec;
     const rimraf = require('rimraf');
     const showdown = require('showdown');
     const converter = new showdown.Converter();
@@ -205,6 +204,7 @@
         targetFolder = targetFolder || path.join(process.cwd(), 'compiled');
         let createdMobiPath = `${path.join(bookFolderPath, fileName)}.mobi`;
         let compiledMobiPath = `${path.join(targetFolder, fileName)}.mobi`;
+
         await copyFile(createdMobiPath, compiledMobiPath);
     }
 
