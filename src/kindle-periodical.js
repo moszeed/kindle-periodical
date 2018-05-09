@@ -3,6 +3,7 @@
 
     const fs = require('fs');
     const path = require('path');
+    const http = require('http');
     const assert = require('assert');
     const promisify = require('util').promisify;
     const writeFile = promisify(fs.writeFile);
@@ -16,7 +17,7 @@
     const sanitizeHtml = require('sanitize-html');
     const download = require('download');
     const minify = require('html-minifier').minify;
-    const exec = require('child_process').exec;
+    const exec = require('child_process').execFile;
     const rimraf = require('rimraf');
     const showdown = require('showdown');
     const converter = new showdown.Converter();
@@ -110,6 +111,7 @@
             }
 
             console.log(`--> download image from: ${img.src}, rename to ${cleanedFileName}`);
+
             await download(img.src).pipe(fs.createWriteStream(path.join(process.cwd(), 'book', cleanedFileName)));
 
             img.src = cleanedFileName;
@@ -207,9 +209,16 @@
     }
 
     async function copyFile (sourceFilePath, targetFolder) {
+        let fileExists = true;
         await createFolder(path.dirname(targetFolder));
-        fs.createReadStream(sourceFilePath)
-            .pipe(fs.createWriteStream(targetFolder));
+        await checkIfFileExists(sourceFilePath, () => {
+            fileExists = false;
+        });
+
+        if (fileExists) {
+            fs.createReadStream(sourceFilePath)
+                .pipe(fs.createWriteStream(targetFolder));
+        }
     }
 
     async function createArticleHTMLFiles (article, articleNumber, sectionNumber) {
@@ -251,13 +260,19 @@
             let currentSection = availableSections[sectionIndex];
 
             let articles = [];
-            await Promise.all(currentSection.articles.map(async (article, articleIndex) => {
-                let createdFileName = await createArticleHTMLFiles(article, articleIndex, parseInt(sectionIndex, 10));
+            for (let articleIndex in currentSection.articles) {
+                let article = currentSection.articles[articleIndex];
+                let createdFileName = await createArticleHTMLFiles(
+                    article,
+                    parseInt(articleIndex, 10),
+                    parseInt(sectionIndex, 10)
+                );
+
                 articles.push($article({
                     file : createdFileName,
                     title: article.title
                 }));
-            }));
+            }
 
             sections.push($section({
                 title   : currentSection.title,
