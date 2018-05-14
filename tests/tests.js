@@ -10,6 +10,7 @@
         t.end();
     });
 
+    /**
     test('create.one.section', async (t) => {
         var bookData = {
             title      : 'ebook-title-simple',
@@ -186,6 +187,7 @@
         t.ok(true, 'run to the end');
         t.end();
     });
+    **/
 
     test('create.complex.mixed', async (t) => {
         var bookData = {
@@ -234,9 +236,9 @@
                     author : 'author-of-article',
                     content: 'simple content'
                 }, {
-                    title  : 'title-of-article-03-03',
-                    author : 'author-of-article',
-                    content: 'simple content'
+                    title : 'Choo Weekly with Gif',
+                    author: 'author-of-article',
+                    url   : 'https://medium.com/choojs/choo-choo-week-44-17-645154c0a442'
                 }, {
                     title  : 'title-of-article-03-04',
                     author : 'author-of-article',
@@ -253,9 +255,9 @@
             }, {
                 title   : 'github readmes',
                 articles: [{
-                    title  : 'choo readme',
-                    author : 'author-of-article',
-                    url    : 'https://raw.githubusercontent.com/choojs/choo/master/README.md'
+                    title : 'choo readme',
+                    author: 'author-of-article',
+                    url   : 'https://raw.githubusercontent.com/choojs/choo/master/README.md'
                 }, {
                     title : 'browserify readme',
                     author: 'author-of-article',
@@ -269,6 +271,7 @@
         t.end();
     });
 
+    /**
     test('create.one.section.targetFolder', async (t) => {
         var bookData = {
             title      : 'ebook-title-simple-other-folder',
@@ -293,5 +296,6 @@
         t.ok(true, 'run to the end');
         t.end();
     });
+    **/
 
 })();

@@ -50,7 +50,12 @@
         }
 
         return jimp.read(imgFilePath)
-            .then((image) => writeImage(image.quality(60), compressFileFullPath))
+            .then((image) => {
+                if (image.getExtension() === 'gif') {
+                    return imgFilePath;
+                }
+                return writeImage(image.quality(60), compressFileFullPath);
+            })
             .catch((err) => console.error(err));
     }
 

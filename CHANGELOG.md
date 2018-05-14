@@ -1,5 +1,8 @@
 # kindle-periodical changelog
 
+## 1.6.1
+* bugfix: .gif images crashing compressing
+
 ## 1.6.0
 * add: images will now be compressed before added
 * bugfix: if no cover is given empty string is added to opf.tpl
