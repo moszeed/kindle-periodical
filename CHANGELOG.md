@@ -1,5 +1,9 @@
 # kindle-periodical changelog
 
+## 1.6.2
+* bugfix: isAbsolute from path module is incorrect
+* change: try to fix image url with origin
+
 ## 1.6.1
 * bugfix: .gif images crashing compressing
 

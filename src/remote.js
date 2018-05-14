@@ -13,6 +13,7 @@
     const download = require('download');
     const read = require('node-readability');
     const jimp = require('jimp');
+    const isAbsoluteUrl = require('is-absolute-url');
 
     const { JSDOM } = jsdom;
 
@@ -74,16 +75,23 @@
                 const cleanedImagePath = path.join(process.cwd(), 'book', cleanedFileName);
 
                 // check if absolute url, try to fix if not
-                if (!path.isAbsolute(img.src)) {
+                if (!isAbsoluteUrl(img.src)) {
                     if (article.url) {
                         img.src = new URL(img.src, article.url).href;
                     }
                 }
 
-                //
+                // check if image is available
                 const isImageAvailable = await isUrlAvailable(img.src);
                 if (!isImageAvailable) {
-                    img.remove();
+                    const articleOrigin = new URL(article.url).origin;
+                    img.src = img.src.replace(article.url, `${articleOrigin}/`);
+
+                    const isFixedImageAvailable = await isUrlAvailable(img.src);
+                    if (!isFixedImageAvailable) {
+                        img.remove();
+                        continue;
+                    }
                 }
 
                 console.log(`\n   from: ${img.src}`);

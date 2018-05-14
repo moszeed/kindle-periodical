@@ -10,7 +10,6 @@
         t.end();
     });
 
-    /**
     test('create.one.section', async (t) => {
         var bookData = {
             title      : 'ebook-title-simple',
@@ -187,7 +186,6 @@
         t.ok(true, 'run to the end');
         t.end();
     });
-    **/
 
     test('create.complex.mixed', async (t) => {
         var bookData = {
@@ -205,13 +203,13 @@
                         author : 'author-of-article',
                         content: 'simple content'
                     }, {
+                        title : 'How to hire',
+                        author: 'author-of-article',
+                        url   : 'https://artjoker.net/blog/how-to-hire-the-best-nodejs-developer/'
+                    }, {
                         title : 'Amazon Kindle',
                         author: 'author-of-article',
                         url   : 'https://de.wikipedia.org/wiki/Amazon_Kindle'
-                    }, {
-                        title  : 'title-of-article-01-03',
-                        author : 'author-of-article',
-                        content: 'simple content'
                     }, {
                         title  : 'title-of-article-01-04',
                         author : 'author-of-article',
@@ -271,7 +269,6 @@
         t.end();
     });
 
-    /**
     test('create.one.section.targetFolder', async (t) => {
         var bookData = {
             title      : 'ebook-title-simple-other-folder',
@@ -296,6 +293,5 @@
         t.ok(true, 'run to the end');
         t.end();
     });
-    **/
 
 })();
