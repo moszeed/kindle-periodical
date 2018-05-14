@@ -1,5 +1,8 @@
 # kindle-periodical changelog
 
+## 1.6.3
+* bugfix: handle jimp error
+
 ## 1.6.2
 * bugfix: isAbsolute from path module is incorrect
 * change: try to fix image url with origin

@@ -203,6 +203,10 @@
                         author : 'author-of-article',
                         content: 'simple content'
                     }, {
+                        title : 'Foodwatch',
+                        author: 'author-of-article',
+                        url   : 'https://www.foodwatch.org/de/informieren/rueckrufe/aktuelle-nachrichten/rueckruf-salamisticks-von-wilhelm-brandenburg-rewe-und-marten-aldi-sued/'
+                    }, {
                         title : 'How to hire',
                         author: 'author-of-article',
                         url   : 'https://artjoker.net/blog/how-to-hire-the-best-nodejs-developer/'
@@ -210,10 +214,6 @@
                         title : 'Amazon Kindle',
                         author: 'author-of-article',
                         url   : 'https://de.wikipedia.org/wiki/Amazon_Kindle'
-                    }, {
-                        title  : 'title-of-article-01-04',
-                        author : 'author-of-article',
-                        content: 'simple content'
                     }
                 ]
             }, {
@@ -293,5 +293,4 @@
         t.ok(true, 'run to the end');
         t.end();
     });
-
 })();

@@ -57,7 +57,11 @@
                 }
                 return writeImage(image.quality(60), compressFileFullPath);
             })
-            .catch((err) => console.error(err));
+            .catch((err) => {
+                console.log('fail to read image:');
+                console.log(err);
+                return false;
+            });
     }
 
     exports.readRemoteImagesFromContent = async function (content, article) {
@@ -100,6 +104,10 @@
                 await download(img.src).then(data => writeFile(cleanedImagePath, data));
 
                 const compressImagesPath = await compressImage(cleanedImagePath);
+                if (!compressImagesPath) {
+                    img.remove();
+                    continue;
+                }
 
                 // get file zizes
                 let fstatCompress = await fileStat(compressImagesPath);
