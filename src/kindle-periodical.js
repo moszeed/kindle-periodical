@@ -1,25 +1,20 @@
 (() => {
     'use strict';
 
+    const _ = require('underscore');
     const fs = require('fs');
     const path = require('path');
     const assert = require('assert');
     const promisify = require('util').promisify;
-    const writeFile = promisify(fs.writeFile);
     const readFile = promisify(fs.readFile);
-    const fileStat = promisify(fs.stat);
-    const mkdir = promisify(fs.mkdir);
-    const _ = require('underscore');
-    const jsdom = require('jsdom');
-    const { JSDOM } = jsdom;
-    const read = require('node-readability');
     const sanitizeHtml = require('sanitize-html');
-    const download = require('download');
     const minify = require('html-minifier').minify;
     const exec = require('child_process').exec;
-    const rimraf = require('rimraf');
     const showdown = require('showdown');
     const converter = new showdown.Converter();
+
+    const FileHandler = require('./file.js');
+    const RemoteHandler = require('./remote.js');
 
     const bookFolderPath = path.join(process.cwd(), 'book');
     const mobiSupportedTags = [
@@ -40,15 +35,6 @@
         return (`00000${value}`).slice(-5);
     }
 
-    function getTemplate (filename) {
-        let fileName = `${filename}.tpl`;
-        let filePath = path.join(__dirname, 'templates', fileName);
-
-        return readFile(filePath, {
-            encoding: 'UTF-8'
-        });
-    }
-
     async function checkContent (content, article) {
         content = content.toString();
 
@@ -67,96 +53,28 @@
 
         // minify html
         content = minify(content, {
-            collapseWhitespace   : true,
-            preserveLineBreaks   : true,
-            removeEmptyElements  : true,
-            removeEmptyAttributes: true,
-            removeAttributeQuotes: true,
-            removeComments       : true,
-            decodeEntities       : true
+            collapseWhitespace       : true,
+            preserveLineBreaks       : true,
+            removeEmptyElements      : true,
+            removeEmptyAttributes    : true,
+            removeAttributeQuotes    : true,
+            removeComments           : true,
+            decodeEntities           : true,
+            minifyCSS                : true,
+            removeRedundantAttributes: true
         });
 
         content = content.replace(/data-src/g, 'src');
         content = content.replace(/<source>/g, '<source/>');
         content = content.replace(/<img>/g, '');
 
-        content = await readRemoteImagesFromContent(content, article);
-
-        return content;
-    }
-
-    async function readRemoteImagesFromContent (content, article) {
-        const dom = new JSDOM(content);
-
-        // download images
-        let imgs = dom.window.document.querySelectorAll('img');
-        for (let img of imgs) {
-            let extension = path.extname(img.src);
-            let baseName = path.basename(img.src, extension);
-            let cleanedBaseName = baseName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-            let cleanedFileName = cleanedBaseName + extension;
-
-            try {
-                new URL(img.src);
-            } catch (err) {
-                console.log(`-> no valid url: ${err}, maybe local`);
-
-                // maybe it is a realtive url, try to fix this
-                if (article.url) {
-                    let url = article.url.split('/');
-                    url.pop();
-                    img.src = path.join(url.join('/'), img.src);
-                }
-            }
-
-            console.log(`--> download image from: ${img.src}, rename to ${cleanedFileName}`);
-
-            await download(img.src).pipe(fs.createWriteStream(path.join(process.cwd(), 'book', cleanedFileName)));
-
-            img.src = cleanedFileName;
+        if ((content.split('<body>').length - 1) === 0) {
+            content = `<body>${content}</body>`;
         }
 
-        return dom.serialize();
-    }
+        content = await RemoteHandler.readRemoteImagesFromContent(content, article);
 
-    function readRemoteContent (url) {
-        return new Promise((resolve, reject) => {
-            read(url, { encoding: 'utf8' }, async (err, article, meta) => {
-                if (err) reject(err);
-                else {
-                    await createFolder(bookFolderPath);
-
-                    const content = article.content;
-                    const dom = new JSDOM(content);
-
-                    // add a utf8 header
-                    dom.window.document.head.insertAdjacentHTML('beforeend', '<meta charset="utf-8">');
-
-                    resolve(dom.serialize());
-                    article.close();
-                }
-            });
-        });
-    }
-
-    function createFolder (fileFolder) {
-        return checkIfFileExists(fileFolder, () => {
-            return mkdir(fileFolder)
-                .catch((err) => {
-                    if (err.code !== 'EEXIST') {
-                        throw Error(err);
-                    }
-                });
-        });
-    }
-
-    function cleanupBookFolder () {
-        return new Promise((resolve, reject) => {
-            rimraf(bookFolderPath, (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
+        return content;
     }
 
     function createMobiFile (filename) {
@@ -177,27 +95,6 @@
         });
     }
 
-    async function checkIfFileExists (filePath, notExistCallback) {
-        try {
-            await fileStat(filePath);
-        } catch (err) {
-            if (err.code !== 'ENOENT') {
-                throw Error(err);
-            }
-            await notExistCallback();
-        }
-    }
-
-    async function writeToBookFolder (fileName, fileContent) {
-        assert.ok(fileName, 'no filename given');
-        assert.ok(fileContent, 'no content given');
-
-        // create folder if not exists
-        await createFolder(bookFolderPath);
-
-        return writeFile(path.join(bookFolderPath, fileName), fileContent, 'utf8');
-    }
-
     async function copyCreatedMobi (fileName, targetFolder) {
         assert.ok(fileName, 'no fileName given');
 
@@ -205,20 +102,7 @@
         let createdMobiPath = `${path.join(bookFolderPath, fileName)}.mobi`;
         let compiledMobiPath = `${path.join(targetFolder, fileName)}.mobi`;
 
-        await copyFile(createdMobiPath, compiledMobiPath);
-    }
-
-    async function copyFile (sourceFilePath, targetFolder) {
-        let fileExists = true;
-        await createFolder(path.dirname(targetFolder));
-        await checkIfFileExists(sourceFilePath, () => {
-            fileExists = false;
-        });
-
-        if (fileExists) {
-            fs.createReadStream(sourceFilePath)
-                .pipe(fs.createWriteStream(targetFolder));
-        }
+        await FileHandler.copyFile(createdMobiPath, compiledMobiPath);
     }
 
     async function createArticleHTMLFiles (article, articleNumber, sectionNumber) {
@@ -230,7 +114,7 @@
 
             let content = article.content || '';
             if (article.url) {
-                content = await readRemoteContent(article.url);
+                content = await RemoteHandler.readRemoteContent(article.url);
             }
             if (article.file) {
                 content = await readFile(article.file);
@@ -238,7 +122,7 @@
 
             console.log(`-> create article (HTML) with Name ${fileName}`);
             const checkedContent = await checkContent(content, article);
-            await writeToBookFolder(fileName, `<body>${checkedContent}</body>`);
+            await FileHandler.writeToBookFolder(fileName, checkedContent);
 
             return fileName;
         } catch (err) {
@@ -251,8 +135,8 @@
         assert.ok(availableSections, 'no sections given');
 
         // get template data
-        const $article = _.template(await getTemplate('content-article'));
-        const $section = _.template(await getTemplate('content-section'));
+        const $article = _.template(await FileHandler.getTemplate('content-article'));
+        const $section = _.template(await FileHandler.getTemplate('content-section'));
 
         // prepare sections
         let sections = [];
@@ -287,7 +171,7 @@
         try {
             assert.ok(createdSections, 'no sections given');
 
-            const $content = _.template(await getTemplate('content'));
+            const $content = _.template(await FileHandler.getTemplate('content'));
 
             let fileName = `contents.html`;
             let fileContent = $content({
@@ -295,7 +179,7 @@
             });
 
             console.log(`-> create contents (HTML) with Name ${fileName}`);
-            await writeToBookFolder(fileName, fileContent);
+            await FileHandler.writeToBookFolder(fileName, fileContent);
 
             return fileName;
         } catch (err) {
@@ -308,9 +192,9 @@
         try {
             assert.ok(params, 'no params given');
 
-            const $opf = _.template(await getTemplate('opf'));
-            const $opfManifest = _.template(await getTemplate('opf-manifest'));
-            const $opfSpineItem = _.template(await getTemplate('opf-spine-item'));
+            const $opf = _.template(await FileHandler.getTemplate('opf'));
+            const $opfManifest = _.template(await FileHandler.getTemplate('opf-manifest'));
+            const $opfSpineItem = _.template(await FileHandler.getTemplate('opf-spine-item'));
 
             const manifestItems = [];
             const refItems = [];
@@ -343,7 +227,7 @@
 
             let fileName = 'contents.opf';
             console.log(`-> create opf (HTML) with Name ${fileName}`);
-            await writeToBookFolder(fileName, $opf({
+            await FileHandler.writeToBookFolder(fileName, $opf({
                 doc_uuid      : currentDate,
                 title         : params.title,
                 author        : params.creator,
@@ -367,9 +251,9 @@
     async function createNsxHTMLFile (params = {}) {
         assert.ok(params, 'no params given');
 
-        const $ncx = _.template(await getTemplate('ncx'));
-        const $ncxArticle = _.template(await getTemplate('ncx-article'));
-        const $ncxSection = _.template(await getTemplate('ncx-section'));
+        const $ncx = _.template(await FileHandler.getTemplate('ncx'));
+        const $ncxArticle = _.template(await FileHandler.getTemplate('ncx-article'));
+        const $ncxSection = _.template(await FileHandler.getTemplate('ncx-section'));
 
         var sections = [];
         for (let sectionIndex in params.sections) {
@@ -403,7 +287,7 @@
 
         let fileName = 'nav-contents.ncx';
         console.log(`-> create ncx (HTML) with Name ${fileName}`);
-        writeToBookFolder(fileName, $ncx({
+        FileHandler.writeToBookFolder(fileName, $ncx({
             title   : params.title,
             author  : params.creator,
             sections: sections.join('')
@@ -417,10 +301,10 @@
             assert.ok(params.title, 'no title given');
             assert.ok(params.sections, 'no sections given');
 
-            await cleanupBookFolder();
+            await FileHandler.cleanupBookFolder();
 
             if (params.cover) {
-                await copyFile(params.cover, path.join(bookFolderPath, path.basename(params.cover)));
+                await FileHandler.copyFile(params.cover, path.join(bookFolderPath, path.basename(params.cover)));
             }
 
             let createdSections = await createSections(params.sections);

@@ -1,6 +1,6 @@
 {
   "name": "kindle-periodical",
-  "version": "1.5.5",
+  "version": "1.6.0",
   "description": "create a periodical .mobi, with kindlegen",
   "main": "./src/kindle-periodical.js",
   "bin": {
@@ -18,7 +18,7 @@
   "author": "Michael Röber",
   "license": "MIT",
   "dependencies": {
-    "download": "^6.2.5",
+    "download": "^7.0.0",
     "html-minifier": "^3.5.9",
     "jsdom": "^11.6.2",
     "minimist": "^1.2.0",
@@ -26,7 +26,9 @@
     "rimraf": "^2.6.2",
     "sanitize-html": "^1.17.0",
     "showdown": "^1.8.6",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "node-fetch": "^2.1.2",
+    "jimp": "^0.2.28"
   },
   "engines": {
     "node": ">=8.0.0"

@@ -14,7 +14,7 @@
 
             <x-metadata>
                 <output content-type="application/x-mobipocket-subscription-magazine" encoding="utf-8"/>
-                <EmbeddedCover><%= cover %></EmbeddedCover>
+                <% if(cover) { %><EmbeddedCover><%= cover %></EmbeddedCover><% } %>
             </x-metadata>
 
             <meta content="book-cover-image" name="cover"/>
@@ -23,7 +23,7 @@
         <manifest>
             <item href="contents.html" media-type="application/xhtml+xml" id="contents"/>
             <item href="nav-contents.ncx" media-type="application/x-dtbncx+xml" id="nav-contents"/>
-            <item href="<%= cover %>" media-type="image/jpg" id="book-cover-image" />
+            <% if(cover) { %><item href="<%= cover %>" media-type="image/jpg" id="book-cover-image" /><% } %>
             <%= manifest_items %>
         </manifest>
 

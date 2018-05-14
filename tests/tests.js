@@ -124,9 +124,9 @@
             sections   : [{
                 title   : 'title-of-section',
                 articles: [{
-                    title  : 'title-of-article',
-                    author : 'author-of-article',
-                    file   : './tests/article.html'
+                    title : 'title-of-article',
+                    author: 'author-of-article',
+                    file  : './tests/article.html'
                 }]
             }]
         };
