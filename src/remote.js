@@ -101,7 +101,11 @@
                 console.log(`\n   from: ${img.src}`);
                 console.log(`   to: ${cleanedImagePath}`);
 
-                await download(img.src).then(data => writeFile(cleanedImagePath, data));
+                await download(img.src)
+                    .then(data => writeFile(cleanedImagePath, data))
+                    .catch((err) => {
+                        console.log(`fail to download image: ${err.message}`);
+                    });
 
                 const compressImagesPath = await compressImage(cleanedImagePath);
                 if (!compressImagesPath) {

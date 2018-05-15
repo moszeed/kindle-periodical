@@ -114,7 +114,11 @@
 
             let content = article.content || '';
             if (article.url) {
-                content = await RemoteHandler.readRemoteContent(article.url);
+                try {
+                    content = await RemoteHandler.readRemoteContent(article.url);
+                } catch (err) {
+                    console.log(`fail to read remote ( ${article.url} ) content: ${err.message}`);
+                }
             }
             if (article.file) {
                 content = await readFile(article.file);

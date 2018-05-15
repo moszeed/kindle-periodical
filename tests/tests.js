@@ -199,9 +199,9 @@
                 title   : 'title-of-section-01',
                 articles: [
                     {
-                        title  : 'title-of-article-01-01',
-                        author : 'author-of-article',
-                        content: 'simple content'
+                        title : 'Facebook',
+                        author: 'author-of-article',
+                        url   : 'https://www.facebook.com/tr?id=1986249401403044&ev=PageView&noscript=1'
                     }, {
                         title : 'Foodwatch',
                         author: 'author-of-article',
