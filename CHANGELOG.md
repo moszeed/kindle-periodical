@@ -1,5 +1,8 @@
 # kindle-periodical changelog
 
+## 1.6.4
+* bugfix: handle read remote errors
+
 ## 1.6.3
 * bugfix: handle jimp error
 
