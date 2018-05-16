@@ -52,10 +52,15 @@
 
         return jimp.read(imgFilePath)
             .then((image) => {
-                if (image.getExtension() === 'gif') {
-                    return imgFilePath;
+                if (image.getExtension() === 'png') {
+                    return writeImage(image.deflateLevel(1), compressFileFullPath);
                 }
-                return writeImage(image.quality(60), compressFileFullPath);
+
+                if (image.getExtension() === 'jpeg') {
+                    return writeImage(image.quality(60), compressFileFullPath);
+                }
+
+                return imgFilePath;
             })
             .catch((err) => {
                 console.log('fail to read image:');
@@ -86,16 +91,22 @@
                 }
 
                 // check if image is available
-                const isImageAvailable = await isUrlAvailable(img.src);
-                if (!isImageAvailable) {
-                    const articleOrigin = new URL(article.url).origin;
-                    img.src = img.src.replace(article.url, `${articleOrigin}/`);
+                try {
+                    const isImageAvailable = await isUrlAvailable(img.src);
+                    if (!isImageAvailable) {
+                        const articleOrigin = new URL(article.url).origin;
+                        img.src = img.src.replace(article.url, `${articleOrigin}/`);
 
-                    const isFixedImageAvailable = await isUrlAvailable(img.src);
-                    if (!isFixedImageAvailable) {
-                        img.remove();
-                        continue;
+                        const isFixedImageAvailable = await isUrlAvailable(img.src);
+                        if (!isFixedImageAvailable) {
+                            img.remove();
+                            continue;
+                        }
                     }
+                } catch (err) {
+                    console.log(`error check link: ${err.message}`);
+                    img.remove();
+                    continue;
                 }
 
                 console.log(`\n   from: ${img.src}`);
