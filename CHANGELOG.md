@@ -1,5 +1,8 @@
 # kindle-periodical changelog
 
+## 1.6.5
+* bugfix: compress images in not supported format throws error
+
 ## 1.6.4
 * bugfix: handle read remote errors
 
