@@ -52,12 +52,18 @@
 
         return jimp.read(imgFilePath)
             .then((image) => {
-                if (image.getExtension() === 'png') {
-                    return writeImage(image.deflateLevel(1), compressFileFullPath);
-                }
+                try {
+                    if (image.getExtension() === 'png' &&
+                        image.getMIME() === jimp.MIME_PNG) {
+                        return writeImage(image.deflateLevel(1), compressFileFullPath);
+                    }
 
-                if (image.getExtension() === 'jpeg') {
-                    return writeImage(image.quality(60), compressFileFullPath);
+                    if (image.getExtension() === 'jpeg' &&
+                        image.getMIME() === jimp.MIME_JPEG) {
+                        return writeImage(image.quality(60), compressFileFullPath);
+                    }
+                } catch (err) {
+                    console.log(err);
                 }
 
                 return imgFilePath;
@@ -118,10 +124,12 @@
                         console.log(`fail to download image: ${err.message}`);
                     });
 
-                const compressImagesPath = await compressImage(cleanedImagePath);
-                if (!compressImagesPath) {
-                    img.remove();
-                    continue;
+                let compressImagesPath = cleanedImagePath;
+                if (extension !== '') {
+                    compressImagesPath = await compressImage(cleanedImagePath);
+                    if (!compressImagesPath) {
+                        compressImagesPath = cleanedImagePath;
+                    }
                 }
 
                 // get file zizes
