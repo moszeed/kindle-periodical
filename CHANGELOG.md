@@ -1,5 +1,8 @@
 # kindle-periodical changelog
 
+## 1.6.6
+* bugfix: compress images in not supported format throws error #2
+
 ## 1.6.5
 * bugfix: compress images in not supported format throws error
 
