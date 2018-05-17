@@ -1,23 +1,33 @@
 # kindle-periodical
 create a periodical format .mobi file
 
-Kindlegen must *NOT* be in PATH, will be Downloaded on install
+##### Support
 
-## How to install
+[Buy me a Coffee](https://www.patreon.com/moszeed)
+
+### Features
+* Kindlegen will be installed **automatically**
+* usable as **CLI** and **programmatically**
+* support for **remote webpages** ( will be downloaded with [node-readability](https://github.com/luin/readability) ) and **files**
+* **Markdown**
+
+### How to install
     npm install kindle-periodical
 
-#### CLI usage
-    kindle-periodical -f nameOfBook /path/to/.json
+Kindlegen must **NOT** be in PATH, will be downloaded on install!
 
+### CLI usage
+    kindle-periodical -f nameOfBook /path/to/.json
+    
     -f --filename   name of created .mobi
     -o --output     folder of created .mobi
 
-will reate a ```compiled``` folder with the generated book
+will create a ```compiled``` folder with the generated book
 
-#### API usage
+### API usage
 
     var periodical = require('kindle-periodical');
-	var bookData = {
+    var bookData = {
         "title"         : 'ebook-title',
         "creator"       : 'creator',
         "publisher"     : 'publisher',
@@ -36,7 +46,7 @@ will reate a ```compiled``` folder with the generated book
             }]
         }]
     };
-
+    
     periodical.create(bookData, {
         targetFolder: '.' // where should the mobi file go
     })
