@@ -1,6 +1,6 @@
 {
   "name": "kindle-periodical",
-  "version": "1.6.6",
+  "version": "2.0.0",
   "description": "create a periodical .mobi, with kindlegen",
   "main": "./src/kindle-periodical.js",
   "bin": {
@@ -32,7 +32,7 @@
     "underscore": "^1.8.3"
   },
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=10.0.0"
   },
   "repository": {
     "type": "git",
