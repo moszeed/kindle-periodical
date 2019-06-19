@@ -45,9 +45,10 @@
         content = sanitizeHtml(content, {
             allowedTags      : mobiSupportedTags,
             allowedAttributes: {
-                meta: [ 'charset' ],
+                meta: [ 'charset', 'content', 'http-equiv'],
                 a   : [ 'href', 'name', 'target' ],
-                img : [ 'src', 'srcset' ]
+                img : [ 'src', 'srcset' ],
+                '*' :  [ 'style', 'class' ]
             }
         });
 
@@ -306,6 +307,7 @@
             assert.ok(params.sections, 'no sections given');
 
             await FileHandler.cleanupBookFolder();
+            await FileHandler.createFolder(bookFolderPath);
 
             if (params.cover) {
                 await FileHandler.copyFile(params.cover, path.join(bookFolderPath, path.basename(params.cover)));
