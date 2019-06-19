@@ -1,16 +1,11 @@
 (() => {
     'use strict';
 
-    const self = this;
+    const fsSync = require('fs');
+    const fs = fsSync.promises;
 
-    const fs = require('fs');
     const path = require('path');
     const assert = require('assert');
-    const promisify = require('util').promisify;
-    const readFile = promisify(fs.readFile);
-    const fileStat = promisify(fs.stat);
-    const writeFile = promisify(fs.writeFile);
-    const mkdir = promisify(fs.mkdir);
     const rimraf = require('rimraf');
 
     const bookFolderPath = path.join(process.cwd(), 'book');
@@ -19,43 +14,46 @@
         let fileName = `${filename}.tpl`;
         let filePath = path.join(__dirname, 'templates', fileName);
 
-        return readFile(filePath, {
+        return fs.readFile(filePath, {
             encoding: 'UTF-8'
         });
     };
 
-    exports.checkIfFileExists = async function (filePath, notExistCallback) {
+    exports.checkIfFileExists = async function (filePath) {
         try {
-            await fileStat(filePath);
+            await fs.stat(filePath);
+            return true;
         } catch (err) {
             if (err.code !== 'ENOENT') {
                 throw Error(err);
             }
-            await notExistCallback();
+
+            return false;
         }
     };
 
-    exports.createFolder = function (fileFolder) {
-        return self.checkIfFileExists(fileFolder, () => {
-            return mkdir(fileFolder)
-                .catch((err) => {
-                    if (err.code !== 'EEXIST') {
-                        throw Error(err);
-                    }
-                });
-        });
+    exports.createFolder = async function (fileFolder) {
+        try {
+            const exist = await this.checkIfFileExists(fileFolder);
+            if (!exist) {
+                await fs.mkdir(fileFolder)
+            }
+
+        } catch (err) {
+            if (err.code !== 'EEXIST') {
+                console.error(`fail to create folder: ${fileFolder}`);
+                throw Error(err);
+            }
+        }
     };
 
     exports.copyFile = async function (sourceFilePath, targetFolder) {
-        let fileExists = true;
-        await self.createFolder(path.dirname(targetFolder));
-        await self.checkIfFileExists(sourceFilePath, () => {
-            fileExists = false;
-        });
+        await this.createFolder(path.dirname(targetFolder));
 
+        const fileExists = await this.checkIfFileExists(sourceFilePath);
         if (fileExists) {
-            fs.createReadStream(sourceFilePath)
-                .pipe(fs.createWriteStream(targetFolder));
+            fsSync.createReadStream(sourceFilePath)
+                .pipe(fsSync.createWriteStream(targetFolder));
         }
     };
 
@@ -64,9 +62,9 @@
         assert.ok(fileContent, 'no content given');
 
         // create folder if not exists
-        await self.createFolder(bookFolderPath);
+        await this.createFolder(bookFolderPath);
 
-        return writeFile(path.join(bookFolderPath, fileName), fileContent, 'utf8');
+        return fs.writeFile(path.join(bookFolderPath, fileName), fileContent, 'latin1');
     };
 
     exports.cleanupBookFolder = function () {
