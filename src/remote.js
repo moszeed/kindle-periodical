@@ -11,7 +11,7 @@
     const jsdom = require('jsdom');
     const fetch = require('node-fetch');
     const download = require('download');
-    const read = require('node-readability');
+    const readability = require('readability');
     const jimp = require('jimp');
     const isAbsoluteUrl = require('is-absolute-url');
 
@@ -48,6 +48,10 @@
                     resolve(pathToSave);
                 });
             });
+        }
+
+        if (imgExtension.includes('svg')) {
+            return false;
         }
 
         return jimp.read(imgFilePath)
@@ -153,22 +157,18 @@
         return dom.serialize();
     };
 
-    exports.readRemoteContent = function (url) {
-        return new Promise((resolve, reject) => {
-            read(url, { encoding: 'utf8' }, async (err, article, meta) => {
-                if (err) reject(err);
-                else {
-                    await FileHandler.createFolder(bookFolderPath);
+    exports.readRemoteContent = async function (url) {
+        // get content from url
+        const dom = await JSDOM.fromURL(url);
 
-                    // create a new JSOM object
-                    const dom = new JSDOM(article.content);
-                    article.close();
+        // add a utf8 header
+        dom.window.document.head.insertAdjacentHTML('beforeend', '<meta charset="ISO-8859-1">');
 
-                    // add a utf8 header
-                    dom.window.document.head.insertAdjacentHTML('beforeend', '<meta charset="utf-8">');
-                    resolve(dom.serialize());
-                }
-            });
-        });
+        // simplify
+        const reader = new readability(dom.window.document);
+        const article = reader.parse();
+
+        // return content
+        return article.content;
     };
 })();
