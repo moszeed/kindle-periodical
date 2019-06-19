@@ -1,5 +1,10 @@
 # kindle-periodical changelog
 
+## 2.0.0
+* change: !BREAKING now only support for Node.js Version >= 10.0.0 , using fs.promise API
+* change: switch to @mozilla/readability for better support
+* bugfix: async folder create errors
+
 ## 1.6.6
 * bugfix: compress images in not supported format throws error #2
 
