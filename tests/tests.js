@@ -158,6 +158,28 @@
         t.end();
     });
 
+    test('create.simple.withurl.big', async (t) => {
+        var bookData = {
+            title      : 'ebook-title-simple-withurl-big',
+            creator    : 'creator',
+            publisher  : 'publisher',
+            subject    : 'subject',
+            description: 'description',
+            sections   : [{
+                title   : 'title-of-section',
+                articles: [{
+                    title : 'title-of-article',
+                    author: 'author-of-article',
+                    url   : 'https://doc.rust-lang.org/book/print.html'
+                }]
+            }]
+        };
+
+        await kindlePeriodical.create(bookData);
+        t.ok(true, 'run to the end');
+        t.end();
+    });
+
     test('create.multiple.mixed', async (t) => {
         var bookData = {
             title      : 'ebook-title-multiple-mixed',
