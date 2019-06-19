@@ -1,5 +1,10 @@
 {
   "extends": "standard",
+   "env": {
+      "browser": true,
+      "es6": true,
+      "node": true
+  },
   "rules"  : {
     "semi": ["error", "always"],
     "key-spacing": [2, {
