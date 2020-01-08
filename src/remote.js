@@ -161,14 +161,16 @@
         // get content from url
         const dom = await JSDOM.fromURL(url);
 
-        // add a utf8 header
-        dom.window.document.head.insertAdjacentHTML('beforeend', '<meta charset="ISO-8859-1">');
-
         // simplify
         const reader = new readability(dom.window.document);
         const article = reader.parse();
 
+        var content = new JSDOM(article.content);
+
+        // add a utf8 header
+        content.window.document.head.insertAdjacentHTML('beforeend', '<meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>');
+
         // return content
-        return article.content;
+        return content.serialize();
     };
 })();
