@@ -38,9 +38,6 @@
     async function checkContent (content, article) {
         content = content.toString();
 
-        // convert markdown
-        content = converter.makeHtml(content);
-
         // remove not supported tags
         content = sanitizeHtml(content, {
             allowedTags      : mobiSupportedTags,
@@ -113,7 +110,7 @@
 
             let fileName = `${sectionNumber}-${pad(articleNumber)}.html`;
 
-            let content = article.content || '';
+            let content = article.content || undefined;
             if (article.url) {
                 try {
                     content = await RemoteHandler.readRemoteContent(article.url);
@@ -121,8 +118,12 @@
                     console.log(`fail to read remote ( ${article.url} ) content: ${err.message}`);
                 }
             }
-            if (article.file) {
+            else if (article.file) {
                 content = await readFile(article.file);
+            }
+
+            if (article.markdown) {
+                content = converter.makeHtml(content);
             }
 
             console.log(`-> create article (HTML) with Name ${fileName}`);

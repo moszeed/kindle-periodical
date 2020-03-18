@@ -38,11 +38,12 @@ will create a ```compiled``` folder with the generated book
         "sections"      : [{
             "title" : 'title-of-section',
             "articles"  : [{
-                "title"  : 'title-of-article',
-                "author" : 'author-of-article',
-                "content": 'content-of-article'
-                "file"   : "path-to-local-file",
-                "url"    : 'url-to-a-website'
+                "title"    : 'title-of-article',
+                "author"   : 'author-of-article',
+                "content"  : 'content-of-article',
+                "markdown" : 'is-content-markdown',
+                "file"     : "path-to-local-file",
+                "url"      : 'url-to-a-website'
             }]
         }]
     };
