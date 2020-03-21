@@ -57,13 +57,9 @@
         return jimp.read(imgFilePath)
             .then((image) => {
                 try {
-                    if (image.getExtension() === 'png' &&
-                        image.getMIME() === jimp.MIME_PNG) {
+                    if (image.getMIME() === jimp.MIME_PNG) {
                         return writeImage(image.deflateLevel(1), compressFileFullPath);
-                    }
-
-                    if (image.getExtension() === 'jpeg' &&
-                        image.getMIME() === jimp.MIME_JPEG) {
+                    } else if (image.getMIME() === jimp.MIME_JPEG) {
                         return writeImage(image.quality(60), compressFileFullPath);
                     }
                 } catch (err) {
@@ -79,6 +75,25 @@
             });
     }
 
+    async function guessExtension(imageFilename) {
+        let extension = '';
+        await jimp.read(imageFilename)
+            .then((image) => {
+                console.log(image.getMIME());
+                try {
+                    if (image.getMIME() === jimp.MIME_PNG) {
+                        extension = '.png';
+                    } else if (image.getMIME() === jimp.MIME_JPEG) {
+                        extension = '.jpg';
+                    }
+                } catch (err) {
+                    console.log(`Error when guessing extension: ${err}`);
+                }
+            });
+
+        return extension;
+    }
+
     exports.readRemoteImagesFromContent = async function (content, article) {
         const dom = new JSDOM(content);
 
@@ -87,11 +102,12 @@
         if (imgs.length !== 0) {
             console.log(`\n   found ${imgs.length} images, now downloading:`);
             for (let img of imgs) {
-                const extension = path.extname(img.src);
+                let extension = path.extname(img.src);
                 const baseName = path.basename(img.src, extension);
                 const cleanedBaseName = baseName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                const cleanedFileName = cleanedBaseName + extension;
-                const cleanedImagePath = path.join(process.cwd(), 'book', cleanedFileName);
+
+                let cleanedFileName = cleanedBaseName + extension;
+                let cleanedImagePath = path.join(process.cwd(), 'book', cleanedFileName);
 
                 // check if absolute url, try to fix if not
                 if (!isAbsoluteUrl(img.src)) {
@@ -119,6 +135,15 @@
                     continue;
                 }
 
+                if (!extension || extension !== '') {
+                    // some webservers are not using extensions for some reason
+                    extension = await guessExtension(img.src);
+                    console.log(`Image ${img.src}: extension guessed to ${extension}.`);
+
+                    cleanedImagePath += extension;
+                    cleanedFileName += extension;
+                }
+
                 console.log(`\n   from: ${img.src}`);
                 console.log(`   to: ${cleanedImagePath}`);
 
@@ -138,11 +163,11 @@
 
                 // get file zizes
                 let fstatCompress = await fileStat(compressImagesPath);
-                img.src = compressImagesPath;
+                img.src = path.basename(compressImagesPath);
 
                 let fstatCleaned = await fileStat(cleanedImagePath);
                 if (fstatCompress.size > fstatCleaned.size) {
-                    img.src = cleanedImagePath;
+                    img.src = cleanedFileName;
                     if (fstatCleaned.size / Math.pow(1024.0, 2) > maxImageSizeMb) {
                         img.remove();
                     }
