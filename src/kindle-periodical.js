@@ -111,7 +111,7 @@
             let fileName = `${sectionNumber}-${pad(articleNumber)}.html`;
 
             let content = article.content || undefined;
-            if (article.url) {
+            if (article.url && !content) {
                 try {
                     content = await RemoteHandler.readRemoteContent(article.url);
                 } catch (err) {
@@ -132,7 +132,7 @@
 
             return fileName;
         } catch (err) {
-            console.log('fail to create HTML for Article');
+            console.log(`fail to create HTML for Article: ${article.url}`);
             throw Error(err);
         }
     }
