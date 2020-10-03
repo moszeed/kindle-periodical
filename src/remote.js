@@ -76,20 +76,22 @@
     }
 
     async function guessExtension(imageFilename) {
+        console.log(`Guessing extension for: ${imageFilename}`);
         let extension = '';
-        await jimp.read(imageFilename)
-            .then((image) => {
-                console.log(image.getMIME());
-                try {
-                    if (image.getMIME() === jimp.MIME_PNG) {
-                        extension = '.png';
-                    } else if (image.getMIME() === jimp.MIME_JPEG) {
-                        extension = '.jpg';
-                    }
-                } catch (err) {
-                    console.log(`Error when guessing extension: ${err}`);
-                }
-            });
+        try {
+            await jimp.read(imageFilename)
+                .then((image) => {
+                        const mime = image.getMIME();
+                        console.log(`MIME: ${mime}`);
+                        if (mime === jimp.MIME_PNG) {
+                            extension = '.png';
+                        } else if (mime === jimp.MIME_JPEG) {
+                            extension = '.jpg';
+                        }
+                });
+        } catch (err) {
+            console.log(`Error when guessing extension: ${err}`);
+        }
 
         return extension;
     }
@@ -108,6 +110,11 @@
 
                 let cleanedFileName = cleanedBaseName + extension;
                 let cleanedImagePath = path.join(process.cwd(), 'book', cleanedFileName);
+
+                // some webservers use lazy loading of images
+                if (img['data-src']) {
+                    img.src = img['data-src'];
+                }
 
                 // check if absolute url, try to fix if not
                 if (!isAbsoluteUrl(img.src)) {
