@@ -18,9 +18,14 @@ Kindlegen must **NOT** be in PATH, will be downloaded on install!
 
 ### CLI usage
     kindle-periodical -f nameOfBook /path/to/.json
-    
-    -f --filename   name of created .mobi
-    -o --output     folder of created .mobi
+
+    -f --filename           name of created .mobi
+    -o --output             folder of created .mobi
+    --maxImageWidth         maximal width image will be resized to
+    --maxImageHeight        maximal height image will be resized to
+    --saveImageGrayscale    images will be converted to grayscale
+    --saveImageJpeg         images of all formats will be saved as jpeg
+
 
 will create a ```compiled``` folder with the generated book
 
@@ -47,7 +52,7 @@ will create a ```compiled``` folder with the generated book
             }]
         }]
     };
-    
+
     periodical.create(bookData, {
         targetFolder: '.' // where should the mobi file go
     })

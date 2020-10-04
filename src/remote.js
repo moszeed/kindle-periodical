@@ -35,8 +35,11 @@
         }
     }
 
-    async function compressImage (imgFilePath) {
-        const imgExtension = path.extname(imgFilePath);
+    async function compressImage (imgFilePath, opts) {
+        const PNG_DEFLATE_LEVEL = 1;
+        const JPEG_QUALITY_VALUE = 60;
+
+        const imgExtension = opts.saveImageJpeg ? ".jpg" : path.extname(imgFilePath);
         const imgFileName = path.basename(imgFilePath, imgExtension);
         const compressFileName = `${imgFileName}-small${imgExtension}`;
         const compressFileFullPath = path.join(path.dirname(imgFilePath), compressFileName);
@@ -57,10 +60,20 @@
         return jimp.read(imgFilePath)
             .then((image) => {
                 try {
-                    if (image.getMIME() === jimp.MIME_PNG) {
-                        return writeImage(image.deflateLevel(1), compressFileFullPath);
-                    } else if (image.getMIME() === jimp.MIME_JPEG) {
-                        return writeImage(image.quality(60), compressFileFullPath);
+                    const mime = image.getMIME();
+
+                    if (opts.maxImageWidth && opts.maxImageHeight) {
+                        image.scaleToFit(opts.maxImageWidth, opts.maxImageHeight);
+                    }
+
+                    if (opts.saveImageGrayscale) {
+                        image.grayscale();
+                    }
+
+                    if (mime === jimp.MIME_JPEG || opts.saveImageJpeg) {
+                        return writeImage(image.quality(JPEG_QUALITY_VALUE), compressFileFullPath);
+                    } else if (mime === jimp.MIME_PNG) {
+                        return writeImage(image.deflateLevel(PNG_DEFLATE_LEVEL), compressFileFullPath);
                     }
                 } catch (err) {
                     console.log(err);
@@ -96,7 +109,7 @@
         return extension;
     }
 
-    exports.readRemoteImagesFromContent = async function (content, article) {
+    exports.readRemoteImagesFromContent = async function (content, article, opts) {
         const dom = new JSDOM(content);
 
         // download images
@@ -162,7 +175,7 @@
 
                 let compressImagesPath = cleanedImagePath;
                 if (extension !== '') {
-                    compressImagesPath = await compressImage(cleanedImagePath);
+                    compressImagesPath = await compressImage(cleanedImagePath, opts);
                     if (!compressImagesPath) {
                         compressImagesPath = cleanedImagePath;
                     }

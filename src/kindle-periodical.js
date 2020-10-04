@@ -35,7 +35,7 @@
         return (`00000${value}`).slice(-5);
     }
 
-    async function checkContent (content, article) {
+    async function checkContent (content, article, opts) {
         content = content.toString();
 
         // remove not supported tags
@@ -70,7 +70,7 @@
             content = `<body>${content}</body>`;
         }
 
-        content = await RemoteHandler.readRemoteImagesFromContent(content, article);
+        content = await RemoteHandler.readRemoteImagesFromContent(content, article, opts);
 
         return content;
     }
@@ -79,7 +79,7 @@
         return new Promise((resolve, reject) => {
             let commands = [
                 'cd ' + path.normalize(bookFolderPath),
-                `${path.resolve(__dirname, '..', 'bin/kindlegen')} -c2 contents.opf -o ${filename}.mobi`
+                `${path.resolve(__dirname, '..', 'bin/kindlegen')} -c2 contents.opf -o ${filename}.mobi -gif`
             ];
 
             let kindlegenExec = exec(commands.join(' && '));
@@ -103,7 +103,7 @@
         await FileHandler.copyFile(createdMobiPath, compiledMobiPath);
     }
 
-    async function createArticleHTMLFiles (article, articleNumber, sectionNumber) {
+    async function createArticleHTMLFiles (article, articleNumber, sectionNumber, opts) {
         try {
             assert.ok(typeof sectionNumber === 'number', 'sectionNumber is no number');
             assert.ok(typeof articleNumber === 'number', 'articleNumber is no number');
@@ -127,7 +127,7 @@
             }
 
             console.log(`-> create article (HTML) with Name ${fileName}`);
-            const checkedContent = await checkContent(content, article);
+            const checkedContent = await checkContent(content, article, opts);
             await FileHandler.writeToBookFolder(fileName, checkedContent);
 
             return fileName;
@@ -137,7 +137,7 @@
         }
     }
 
-    async function createSections (availableSections = []) {
+    async function createSections (availableSections = [], opts) {
         assert.ok(availableSections, 'no sections given');
 
         // get template data
@@ -155,7 +155,8 @@
                 let createdFileName = await createArticleHTMLFiles(
                     article,
                     parseInt(articleIndex, 10),
-                    parseInt(sectionIndex, 10)
+                    parseInt(sectionIndex, 10),
+                    opts
                 );
 
                 articles.push($article({
@@ -314,7 +315,7 @@
                 await FileHandler.copyFile(params.cover, path.join(bookFolderPath, path.basename(params.cover)));
             }
 
-            let createdSections = await createSections(params.sections);
+            let createdSections = await createSections(params.sections, opts);
             await createContentHTMLFile(createdSections);
             await createOpfHTMLFile(params);
             await createNsxHTMLFile(params);
