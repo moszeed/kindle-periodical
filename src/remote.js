@@ -67,7 +67,10 @@
                     }
 
                     if (opts.saveImageGrayscale) {
-                        image.grayscale();
+                        image.color([
+                            { apply: 'greyscale', params: [16] }  // kindle reader has 16 gray levels
+                        ]);
+                        image.normalize();
                     }
 
                     if (mime === jimp.MIME_JPEG || opts.saveImageJpeg) {
