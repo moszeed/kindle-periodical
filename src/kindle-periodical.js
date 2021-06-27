@@ -35,11 +35,8 @@
         return (`00000${value}`).slice(-5);
     }
 
-    async function checkContent (content, article) {
+    async function checkContent (content, article, opts) {
         content = content.toString();
-
-        // convert markdown
-        content = converter.makeHtml(content);
 
         // remove not supported tags
         content = sanitizeHtml(content, {
@@ -51,6 +48,18 @@
                 '*' :  [ 'style', 'class' ]
             }
         });
+
+        content = content.replace(/data-src/g, 'src');
+        content = content.replace(/<source>/g, '<source/>');
+        content = content.replace(/<img>/g, '');
+
+        if ((content.split('<body>').length - 1) === 0) {
+            content = `<body>${content}</body>`;
+        }
+
+        if ((content.split('<head>').length - 1) === 0) {
+            content = `<head><meta content="text/html; charset=utf-8" http-equiv="Content-Type"/></head>${content}`;
+        }
 
         // minify html
         content = minify(content, {
@@ -65,15 +74,7 @@
             removeRedundantAttributes: true
         });
 
-        content = content.replace(/data-src/g, 'src');
-        content = content.replace(/<source>/g, '<source/>');
-        content = content.replace(/<img>/g, '');
-
-        if ((content.split('<body>').length - 1) === 0) {
-            content = `<body>${content}</body>`;
-        }
-
-        content = await RemoteHandler.readRemoteImagesFromContent(content, article);
+        content = await RemoteHandler.readRemoteImagesFromContent(content, article, opts);
 
         return content;
     }
@@ -82,7 +83,7 @@
         return new Promise((resolve, reject) => {
             let commands = [
                 'cd ' + path.normalize(bookFolderPath),
-                `${path.resolve(__dirname, '..', 'bin/kindlegen')} -c2 contents.opf -o ${filename}.mobi`
+                `${path.resolve(__dirname, '..', 'bin/kindlegen')} -c2 contents.opf -o ${filename}.mobi -gif`
             ];
 
             let kindlegenExec = exec(commands.join(' && '));
@@ -106,37 +107,41 @@
         await FileHandler.copyFile(createdMobiPath, compiledMobiPath);
     }
 
-    async function createArticleHTMLFiles (article, articleNumber, sectionNumber) {
+    async function createArticleHTMLFiles (article, articleNumber, sectionNumber, opts) {
         try {
             assert.ok(typeof sectionNumber === 'number', 'sectionNumber is no number');
             assert.ok(typeof articleNumber === 'number', 'articleNumber is no number');
 
             let fileName = `${sectionNumber}-${pad(articleNumber)}.html`;
 
-            let content = article.content || '';
-            if (article.url) {
+            let content = article.content || undefined;
+            if (article.url && !content) {
                 try {
                     content = await RemoteHandler.readRemoteContent(article.url);
                 } catch (err) {
                     console.log(`fail to read remote ( ${article.url} ) content: ${err.message}`);
                 }
             }
-            if (article.file) {
+            else if (article.file) {
                 content = await readFile(article.file);
             }
 
+            if (article.markdown) {
+                content = converter.makeHtml(content);
+            }
+
             console.log(`-> create article (HTML) with Name ${fileName}`);
-            const checkedContent = await checkContent(content, article);
+            const checkedContent = await checkContent(content, article, opts);
             await FileHandler.writeToBookFolder(fileName, checkedContent);
 
             return fileName;
         } catch (err) {
-            console.log('fail to create HTML for Article');
+            console.log(`fail to create HTML for Article: ${article.url}`);
             throw Error(err);
         }
     }
 
-    async function createSections (availableSections = []) {
+    async function createSections (availableSections = [], opts) {
         assert.ok(availableSections, 'no sections given');
 
         // get template data
@@ -154,7 +159,8 @@
                 let createdFileName = await createArticleHTMLFiles(
                     article,
                     parseInt(articleIndex, 10),
-                    parseInt(sectionIndex, 10)
+                    parseInt(sectionIndex, 10),
+                    opts
                 );
 
                 articles.push($article({
@@ -313,7 +319,7 @@
                 await FileHandler.copyFile(params.cover, path.join(bookFolderPath, path.basename(params.cover)));
             }
 
-            let createdSections = await createSections(params.sections);
+            let createdSections = await createSections(params.sections, opts);
             await createContentHTMLFile(createdSections);
             await createOpfHTMLFile(params);
             await createNsxHTMLFile(params);

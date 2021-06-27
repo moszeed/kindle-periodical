@@ -64,7 +64,7 @@
         // create folder if not exists
         await this.createFolder(bookFolderPath);
 
-        return fs.writeFile(path.join(bookFolderPath, fileName), fileContent, 'latin1');
+        return fs.writeFile(path.join(bookFolderPath, fileName), fileContent, 'utf8');
     };
 
     exports.cleanupBookFolder = function () {
