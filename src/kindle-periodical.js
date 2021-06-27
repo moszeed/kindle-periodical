@@ -49,6 +49,18 @@
             }
         });
 
+        content = content.replace(/data-src/g, 'src');
+        content = content.replace(/<source>/g, '<source/>');
+        content = content.replace(/<img>/g, '');
+
+        if ((content.split('<body>').length - 1) === 0) {
+            content = `<body>${content}</body>`;
+        }
+
+        if ((content.split('<head>').length - 1) === 0) {
+            content = `<head><meta content="text/html; charset=utf-8" http-equiv="Content-Type"/></head>${content}`;
+        }
+
         // minify html
         content = minify(content, {
             collapseWhitespace       : true,
@@ -61,14 +73,6 @@
             minifyCSS                : true,
             removeRedundantAttributes: true
         });
-
-        content = content.replace(/data-src/g, 'src');
-        content = content.replace(/<source>/g, '<source/>');
-        content = content.replace(/<img>/g, '');
-
-        if ((content.split('<body>').length - 1) === 0) {
-            content = `<body>${content}</body>`;
-        }
 
         content = await RemoteHandler.readRemoteImagesFromContent(content, article, opts);
 
